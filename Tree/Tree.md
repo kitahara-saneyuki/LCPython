@@ -1,10 +1,8 @@
 # Tree
 
-## 基础知识
+## Inorder, Preorder & Postorder Traversal
 
-### Inorder, Preorder & Postorder Traversal
-
-#### Inorder
+### Inorder
 
 > 思路 1：递归，瞬秒
 
@@ -48,7 +46,7 @@ class Solution(object):
         return res
 ```
 
-#### Preorder
+### Preorder
 
 > 思路 1：递归，瞬秒
 
@@ -91,7 +89,7 @@ class Solution(object):
         return res
 ```
 
-#### Postorder
+### Postorder
 
 > 思路 1：递归
 
@@ -130,7 +128,7 @@ class Solution(object):
         return res[::-1]
 ```
 
-#### 105 & 106 & 889. Construct Binary Tree from Preorder and Inorder Traversal (Inorder and Postorder Traversal) (Preorder and Postorder Traversal)
+### 105 & 106 & 889. Construct Binary Tree from Preorder and Inorder Traversal (Inorder and Postorder Traversal) (Preorder and Postorder Traversal)
 
 这题目实际是在考察对前序和中序遍历的理解，前序遍历的话最左侧的项是root，以此去寻找中序遍历数组中的root，中序遍历数组里root的左边是左子树，右边是右子树，注意python里`pop(0)`是弹出最左侧，`pop()`是弹出最右侧
 
@@ -170,7 +168,7 @@ def constructFromPrePost(self, pre, post):
     return root
 ```
 
-#### 173. Binary Search Tree Iterator
+### 173. Binary Search Tree Iterator
 
 这题目实际是用stack模拟中序遍历……
 
@@ -200,7 +198,7 @@ class BSTIterator(object):
         return node.val
 ```
 
-#### 230. Kth Smallest Element in a BST
+### 230. Kth Smallest Element in a BST
 
 继续用stack模拟中序遍历……
 
@@ -226,11 +224,11 @@ class Solution:
             root = root.right
 ```
 
-### 各种递归基础题
+## 各种递归基础题
 
 树是最简单的数据结构，主要是因为一般不会用迭代来处理树的内容，只有递归的话比较好想
 
-#### 98. Validate Binary Search Tree
+### 98. Validate Binary Search Tree
 
 实际上就是每次往下看，node都确保被夹在一个范围。
 
@@ -248,7 +246,7 @@ class Solution:
                 and self.validity(root.right, root.val, right)
 ```
 
-#### 100. Same Tree
+### 100. Same Tree
 
 ```python
 class Solution:
@@ -260,7 +258,7 @@ class Solution:
         return False
 ```
 
-#### 101. Symmetric Tree
+### 101. Symmetric Tree
 
 两棵树symmetric， 有几种可能：
 
@@ -286,7 +284,7 @@ class Solution(object):
             return False
 ```
 
-#### 104. Maximum Depth of Binary Tree
+### 104. Maximum Depth of Binary Tree
 
 ```python
 class Solution(object):
@@ -296,7 +294,7 @@ class Solution(object):
         return 1 + max(self.maxDepth(root.left), self.maxDepth(root.right))
 ```
 
-#### 108 & 109. Convert Sorted Array / List to Binary Search Tree
+### 108 & 109. Convert Sorted Array / List to Binary Search Tree
 
 递归
 
@@ -338,7 +336,7 @@ class Solution(object):
             return root
 ```
 
-#### 110. Balanced Binary Tree
+### 110. Balanced Binary Tree
 
 递归，判断左右子树最大高度差不超过1且左右子树均为平衡树
 
@@ -356,7 +354,7 @@ class Solution(object):
                 and self.isBalanced(root.right)
 ```
 
-#### 111. Minimum Depth of Binary Tree
+### 111. Minimum Depth of Binary Tree
 
 这个题目的陷阱在于如果一个节点只有一侧有儿子，你是不能返回min(left, right)的，因为此时有一侧返回值是0
 
@@ -373,7 +371,7 @@ class Solution(object):
             return 1 + min(left, right)
 ```
 
-#### 124. Binary Tree Maximum Path Sum
+### 124. Binary Tree Maximum Path Sum
 
 这题名为难题实际上没多难……重点是体会递归关系
 
@@ -393,7 +391,7 @@ class Solution:
         return max(left, right) + root.val
 ```
 
-#### 129. Sum Root to Leaf Numbers
+### 129. Sum Root to Leaf Numbers
 
 ```py
 class Solution:
@@ -411,7 +409,7 @@ class Solution:
                 return self.calSum(root.left, curSum) + self.calSum(root.right, curSum)
 ```
 
-#### 226. Invert Binary Tree
+### 226. Invert Binary Tree
 
 基础题，要注意速度
 
@@ -423,7 +421,7 @@ class Solution:
         return root
 ```
 
-#### 285. Inorder Successor in BST
+### 285. Inorder Successor in BST
 
 货真价实的简单题，BST中序遍历是单调递增的，所以实际就是在BST里寻找比p大的最小值咯
 
@@ -439,7 +437,7 @@ def inorderSuccessor(self, root, p):
     return ret
 ```
 
-#### 297 / 449. Serialize and Deserialize Binary Tree / BST
+### 297 / 449. Serialize and Deserialize Binary Tree / BST
 
 这题其实没说要你把二叉树弄成啥样……这个解法就是复杂版前序遍历而已
 
@@ -496,7 +494,7 @@ class Codec:
         return build(float('-infinity'), float('infinity'))
 ```
 
-#### Ternary Expression to Binary Tree
+### Ternary Expression to Binary Tree
 
 这题目leetcode里没有，可能因为太简单？两个解法，一个是栈解法：
 
@@ -544,7 +542,7 @@ Node convertExpression(char[] expression, int i) {
 }
 ```
 
-#### 543. Diameter of Binary Tree
+### 543. Diameter of Binary Tree
 
 这个做法似乎是唯一解？但反正在二叉树问题里时间复杂度是很不漂亮的一种了
 
@@ -561,7 +559,7 @@ def diameterOfBinaryTree(self, root):
     return self.best - 1
 ```
 
-#### 572. Subtree of Another Tree
+### 572. Subtree of Another Tree
 
 ```py
 def isSubtree(self, s, t):
@@ -580,9 +578,9 @@ def isSubtree(self, s, t):
     return helper(s, t, True)
 ```
 
-### DFS
+## DFS
 
-#### 112 / 3. Path Sum I/II
+### 112 / 3. Path Sum I/II
 
 ```python
 class Solution(object):
@@ -614,9 +612,9 @@ class Solution(object):
             self.auxPathSum(root.right, sum - root.val, cur_list + [root.val], cur_lists)
 ```
 
-### 各种LCA
+## 各种LCA
 
-#### 235 / 6. Lowest Common Ancestor of BST / Binary Tree
+### 235 / 6. Lowest Common Ancestor of BST / Binary Tree
 
 BST的话要注意方向，如果不是BST的话要注意他是如何变换状态的
 
@@ -643,9 +641,9 @@ def lowestCommonAncestor(self, root, p, q):
             return right
 ```
 
-### Trie
+## Trie
 
-#### 208. Implement Trie (Prefix Tree)
+### 208. Implement Trie (Prefix Tree)
 
 Trie最好是不要用递归写法，太长，容易错，迭代其实不难解决
 
@@ -684,9 +682,9 @@ class Trie:
         return True
 ```
 
-### Binary Search Tree
+## Binary Search Tree
 
-#### 700 & 701 & 450. BST 增删查
+### 700 & 701 & 450. BST 增删查
 
 ```py
 class Solution:
@@ -729,7 +727,7 @@ class Solution:
         return root
 ```
 
-#### 95 & 96. Unique Binary Search Trees
+### 95 & 96. Unique Binary Search Trees
 
 Given an integer n, generate all structurally unique BST's (binary search trees) that store values 1 ... n.
 
@@ -790,7 +788,7 @@ public int numTrees(int n) {
 }
 ```
 
-#### 99. Recover Binary Search Tree
+### 99. Recover Binary Search Tree
 
 Two elements of a binary search tree (BST) are swapped by mistake. Recover the tree without changing its structure.
 

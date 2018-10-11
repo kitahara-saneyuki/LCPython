@@ -1,6 +1,17 @@
 # Dynamic Programming
 
-动态规划看书也看不懂，反正书上也是用例子来讲解，还不如实际做两道题就领悟的快。动态规划既可以理解成带记忆的递归，也可以理解成数学归纳法。
+## DP套路
+
+1. 定义：`dp[j]`表示什么含义，比如largest subarray sum ending at arr, and must include arr. 注意语言描述, 包括还是不包括arr/matrix[j]
+2. 归纳法则：dp 的 dependency 是怎么样的，依赖于`dp[i-1]`还是`dp[i+1]`还是`dp[k]`for all k < i or all k > i 等等，试着过几个小例子推导一下
+3. 初始态：往往是`dp[0]`，二维往往是第一行，第一列，也就是`dp[0], dp[0][j], dp[i][0]`
+4. 结果：往往是`dp[n], max(dp)`等等, 从定义出发
+5. 填充顺序：从归纳法则的依赖顺序出发判断
+6. 优化: 分为时间和空间两方面。
+    1. 时间的比较难，因为往往需要你重新定义dp状态和归纳法则。
+    2. 空间比较简单，可以根据归纳法则看出来，比如斐波那契数列: `dp = dp[i - 1] + dp[i - 2]`, 那么dp只依赖于前两个元素，就不需要生成整个dp数组，保存两个变量即可，空间可以从`O(n)`优化到`O(1)`。
+
+最后, 多做题多总结多积累小tips，熟能生巧后dp其实是非常简单，也非常有套路的，一些induction rule 的常见pattern 你一眼就能看出来了。
 
 ## 1. 一维DP
 
@@ -67,6 +78,137 @@ def wordBreak(self, s, wordDict):
             if w == s[i-lw+1:i+1] and (dp[i-lw] or i-lw == -1):
                 dp[i] = True
     return dp[-1]
+```
+
+### 最大面积系列题
+
+#### 84. Largest Rectangle in Histogram
+
+1. 栈里保存的是升序的建筑
+2. 添加一个新建筑之前，把所有比新建筑高的建筑都pop出去
+3. 弹出去的建筑指代一个新矩形，左侧为现有的栈顶，右侧为新建筑
+4. 原理：栈里永远是从左向右和从小到大的顺序，因此每次弹栈的时候更新的都是更矮和更左的矩形
+5. 边界条件：放一个dummy的-1
+
+```py
+def largestRectangleArea(self, height):
+    height.append(0)
+    stack = [-1]
+    ans = 0
+    for i in xrange(len(height)):
+        while height[stack[-1]] > height[i]:
+            h = height[stack.pop()]
+            w = i - stack[-1] - 1
+            ans = max(ans, h * w)
+        stack.append(i)
+    height.pop()
+    return ans
+```
+
+#### 85. Maximal Rectangle
+
+这题的精神是跟84一样的，但需要调用一下DP：`height[i]`保存从左到右到i为止有多少个连续的1，复杂度`O(n^2)`
+
+```py
+def maximalRectangle(self, matrix):
+    if not matrix or not matrix[0]:
+        return 0
+    n = len(matrix[0])
+    height = [0] * (n + 1)
+    ans = 0
+    for row in matrix:
+        for i in range(n):
+            height[i] = height[i] + 1 if row[i] == '1' else 0
+        stack = [-1]
+        for i in range(n + 1):
+            while height[i] < height[stack[-1]]:
+                h = height[stack.pop()]
+                w = i - 1 - stack[-1]
+                ans = max(ans, h * w)
+            stack.append(i)
+    return ans
+```
+
+#### 221. Maximal Square
+
+因为是square，所以dp的状态转移方程要考虑`min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1`
+
+```py
+class Solution:
+    def maximalSquare(self, matrix):
+        if not matrix:
+            return 0
+        m, n = len(matrix), len(matrix[0])
+        dp = [[0 if matrix[i][j] == '0' else 1 for j in range(n)] for i in range(m)]
+
+        for i in range(1, m):
+            for j in range(1, n):
+                if matrix[i][j] == '1':
+                    dp[i][j] = min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1
+                else:
+                    dp[i][j] = 0
+
+        ans = max([max(i) for i in dp])
+        return ans ** 2
+```
+
+#### 764. Largest Plus Sign
+
+这题是反向思维，他这map里只有mine是0，那么初始化先构建一个矩阵`dp[i][j]`表示该点最大的十字：
+
+```md
+1 1 1 1 1
+1 2 2 2 1
+1 2 3 2 1
+1 2 2 2 1
+1 1 1 1 1
+```
+
+每一个mine都会影响自己row和col上的每一个dp点，使得该点的最大十字长度不能超过\[该点到mine的距离\]
+
+```py
+class Solution(object):
+    def orderOfLargestPlusSign(self, N, mines):
+        dp = [[min(i, N - 1 - i, j, N - 1 - j) + 1 for j in range(N)] for i in range(N)]
+        for (x, y) in mines:
+            for i in range(N):
+                dp[i][y] = min(dp[i][y], abs(i - x))
+                dp[x][i] = min(dp[x][i], abs(i - y))
+        return max([max(row) for row in dp])
+```
+
+LC修改了测试case导致前一种方法会TLE，我们换个思路，采用dp
+
+1. `dp[i][j]`表示横排或者纵排最近一个0的距离
+2. 初始化我们假设不存在0，所以`dp[i][j]`全都是N
+3. 对每一行都要双向考虑
+
+```py
+def orderOfLargestPlusSign(self, N, mines):
+    grid = [[N] * N for i in range(N)]
+    for m in mines:
+        grid[m[0]][m[1]] = 0
+    for i in range(N):
+        l, r, u, d = 0, 0, 0, 0
+        for j, k in zip(range(N), reversed(range(N))):
+            l = l + 1 if grid[i][j] != 0 else 0
+            if l < grid[i][j]:
+                grid[i][j] = l
+            r = r + 1 if grid[i][k] != 0 else 0
+            if r < grid[i][k]:
+                grid[i][k] = r
+            u = u + 1 if grid[j][i] != 0 else 0
+            if u < grid[j][i]:
+                grid[j][i] = u
+            d = d + 1 if grid[k][i] != 0 else 0
+            if d < grid[k][i]:
+                grid[k][i] = d
+    res = 0
+    for i in range(N):
+        for j in range(N):
+            if res < grid[i][j]:
+                res = grid[i][j]
+    return res
 ```
 
 ### 91. Decode Ways
@@ -232,11 +374,45 @@ def minPathSum(self, grid):
     return grid[len(grid) - 1][len(grid[0]) - 1]
 ```
 
-### 97. Interleaving String
+### 编辑距离系列题
+
+#### 72. Edit Distance
+
+1. DP定义：`dp[i][j]`指从`word1[0:i]`转变到`word2[0:j]`的最优操作次数
+2. 初始化：`dp[i][0] = i`和`dp[0][j] = j`，根据定义
+3. 可以做的操作：
+    1. delete：`dp[i-1][j] + 1` —— 保留了从`word1[0:i-1]`转变到`word2[0:j]`的最优操作次数，因为我们的 word1 的 0~i-1 已经能够转变到 word2 了，所以我们就直接把 word1 中的最后一个字符删除掉就行了。所以就需要额外进行一个 删除 操作。
+    2. insert：`dp[i][j-1] + 1` —— 保留了从 word1[0:i] 转变到 word2[0:j-1] 的最优操作次数，因为我们的 word1 的 0~i 只能转变到 word2 的倒数第二位，所以我们就直接在 word1 的末尾添加一个与 word2 的最后一个字符相同的字符就可以了。所以就需要额外进行一个 插入 操作。
+    3. replace：`dp[i-1][j-1] + 1` —— 保留了从 word1[0:i-1] 转变到 word2[0:j-1] 的最优操作次数，因为我们的 word1 的 0~i-1 只能转变到 word2 的倒数第二位，而 word1 的最后一位与 word2 的最后一位是不同的，所以现在的情况只需要额外的一个 替换 操作即可。
+
+```py
+class Solution(object):
+    def minDistance(self, word1, word2):
+        m = len(word1)
+        n = len(word2)
+        dp = [[i+j for j in range(len(word2)+1)] for i in range(len(word1)+1)]
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if word1[i - 1] == word2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1]
+                else:
+                    dp[i][j] = 1 + min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+        return dp[-1][-1]
+```
+
+#### 97. Interleaving String
 
 Given s1, s2, s3, find whether s3 is formed by the interleaving of s1 and s2.
 
-Solution: 二维DP，`dp[i][j]`意味着`s1[:i]`和`s2[:j]`可以构成`s3[i+j]`
+Solution: 二维DP，这题相对于72要简单一点
+
+1. DP定义：`dp[i][j]`意味着`s1[:i]`和`s2[:j]`可以构成`s3[i+j]`
+2. 初始化：根据定义，
+    1. `dp[i][0] = s1[:i] == s3[:i]`
+    2. `dp[0][j] = s2[:j] == s3[:j]`
+3. 递推关系：`dp[i][j] = or(`
+    1. `dp[i - 1][j] and s3[i + j - 1] == s1[i - 1]`
+    2. `dp[i][j - 1] and s3[i + j - 1] == s2[j - 1]`
 
 ```py
 def isInterleave(self, s1, s2, s3):
@@ -252,7 +428,7 @@ def isInterleave(self, s1, s2, s3):
         return False
 
     # prepare DP matrix and base case
-    dp = [[0] * (len2 + 1) for _ in range(len1 + 1)]
+    dp = [[True] * (len2 + 1) for _ in range(len1 + 1)]
     # base case for s1 & s2
     for i in range(1, len1 + 1):
         dp[i][0] = s1[:i] == s3[:i]
@@ -266,28 +442,75 @@ def isInterleave(self, s1, s2, s3):
     return dp[len1][len2]
 ```
 
-### 174. Dungeon Game
+#### 583. Delete Operation for Two Strings
 
-m*n矩阵，骑士从左上走到右下，只能向右或向下，每个格子为骑士经过这个格子损失或增加的HP值，求骑士必须拥有的起始HP值
+```md
+Given two words word1 and word2, find the minimum number of steps required to make word1 and word2 the same, where in each step you can delete one character in either string.
 
-1. 最低HP是1，0的话骑士就死了，而且中途不能出现0HP
-2. 从最右下到最左上DP
-3. 需求的HP就是格子里的HP的负值
+Example 1:
+Input: "sea", "eat"
+Output: 2
+Explanation: You need one step to make "sea" to "ea" and another step to make "eat" to "ea".
+```
+
+Solution: 二维DP，这题目的实质就是Longest common subsequence
+
+1. DP定义：`dp[i][j]`指`w1[0:i]`和`w2[0:j]`的最长公共子序列长度
+2. 初始化：根据定义，
+    1. `dp[i][0] = 0`
+    2. `dp[0][j] = 0`
+3. 递推关系：`dp[i][j] = max(`
+    1. `dp[i][j - 1]`
+    2. `dp[i - 1][j]`
+    3. `dp[i - 1][j - 1] + (w1[i] == w2[j])`
 
 ```py
-def calculateMinimumHP(self, dungeon):
-    if not dungeon or not dungeon[0]:
-        return 0
-    m = len(dungeon)
-    n = len(dungeon[0])
-    dp=[[2 ** 31 - 1] * (n + 1) for _ in range(m + 1)]
-    dp[m][n - 1]=1
-    dp[m - 1][n]=1
-    for i in range(m - 1, -1, -1):
-        for j in range(n - 1, -1, -1):
-            need = min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j]
-            dp[i][j] = 1 if need <= 0 else need
-    return dp[0][0]
+def minDistance(self, w1, w2):
+    m, n = len(w1), len(w2)
+    dp = [[0] * (n + 1) for i in range(m + 1)]
+    for i in range(m):
+        for j in range(n):
+            dp[i + 1][j + 1] = max(dp[i][j + 1], dp[i + 1][j], dp[i][j] + (w1[i] == w2[j]))
+    return m + n - 2 * dp[m][n]
+```
+
+#### 712. Minimum ASCII Delete Sum for Two Strings
+
+```md
+Given two strings s1, s2, find the lowest ASCII sum of deleted characters to make two strings equal.
+
+Example 1:
+Input: s1 = "sea", s2 = "eat"
+Output: 231
+Explanation: Deleting "s" from "sea" adds the ASCII value of "s" (115) to the sum.
+Deleting "t" from "eat" adds 116 to the sum.
+At the end, both strings are equal, and 115 + 116 = 231 is the minimum sum possible to achieve this.
+```
+
+Solution: 二维DP，这题目的实质就是Longest common subsequence
+
+1. DP定义：`dp[i][j]`指`w1[0:i]`和`w2[0:j]`的最长公共子序列长度
+2. 初始化：根据定义，
+    1. `dp[i][0] = 0`
+    2. `dp[0][j] = 0`
+3. 递推关系：`dp[i][j] = max(`
+    1. 如果`w1[i] == w2[j]`，`dp[i - 1][j - 1] + ord(w1[i])`
+    2. `dp[i][j - 1]`
+    3. `dp[i - 1][j]`
+
+```py
+class Solution(object):
+    def minimumDeleteSum(self, s1, s2):
+        l1, l2 = len(s1), len(s2)
+        dp = [[0] * (l2 + 1) for _ in range(l1 + 1)]
+        for i in range(l1):
+            for j in range(l2):
+                if s1[i] == s2[j]:
+                    dp[i + 1][j + 1] = dp[i][j] + ord(s1[i])
+                else:
+                    dp[i + 1][j + 1] = max(dp[i][j + 1], dp[i + 1][j])
+        result = sum(map(ord, s1 + s2)) - dp[l1][l2] * 2
+        return result
 ```
 
 ### 10 & 44. Regular Expression / Wildcard Matching
@@ -372,6 +595,30 @@ public boolean isMatch(String s, String p) {
 }
 ```
 
+### 174. Dungeon Game
+
+m*n矩阵，骑士从左上走到右下，只能向右或向下，每个格子为骑士经过这个格子损失或增加的HP值，求骑士必须拥有的起始HP值
+
+1. 最低HP是1，0的话骑士就死了，而且中途不能出现0HP
+2. 从最右下到最左上DP
+3. 需求的HP就是格子里的HP的负值
+
+```py
+def calculateMinimumHP(self, dungeon):
+    if not dungeon or not dungeon[0]:
+        return 0
+    m = len(dungeon)
+    n = len(dungeon[0])
+    dp=[[2 ** 31 - 1] * (n + 1) for _ in range(m + 1)]
+    dp[m][n - 1]=1
+    dp[m - 1][n]=1
+    for i in range(m - 1, -1, -1):
+        for j in range(n - 1, -1, -1):
+            need = min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j]
+            dp[i][j] = 1 if need <= 0 else need
+    return dp[0][0]
+```
+
 ### 121-123 & 188. 股票系列题
 
 1. 只允许交易一次，求最大收益
@@ -412,7 +659,7 @@ def maxProfit(self, prices):
 2. DP：dp[i, j]代表最多i次交易之后在第j个价格的最大收益
     1. 初始化：dp[i, 0] = 0，dp[0, j] = 0，没有买卖就没有杀害
     2. dp[i, j] = max(dp[i, j-1], prices[j] - prices[jj] + dp[i-1, jj])
-        1. jj in range of [0, j-1]
+        1. for jj in range of [0, j-1]
         2. 意思是dp[i, j]等于下列两项里的最大值
             1. dp[i, j-1]
             2. dp[i - 1, jj] + (price[j] - price[jj])
