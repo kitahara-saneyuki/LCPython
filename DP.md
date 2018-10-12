@@ -80,6 +80,82 @@ def wordBreak(self, s, wordDict):
     return dp[-1]
 ```
 
+### 140. Word Break II
+
+Given a non-empty string s and a dictionary wordDict containing a list of non-empty words, determine if s can be segmented into a space-separated sequence of one or more dictionary words.
+
+Note:
+
+- The same word in the dictionary may be reused multiple times in the segmentation.
+- You may assume the dictionary does not contain duplicate words.
+
+Example 1:
+
+```md
+Input:
+s = "catsanddog"
+wordDict = ["cat", "cats", "and", "sand", "dog"]
+Output:
+[
+  "cats and dog",
+  "cat sand dog"
+]
+```
+
+Example 2:
+
+```md
+Input:
+s = "pineapplepenapple"
+wordDict = ["apple", "pen", "applepen", "pine", "pineapple"]
+Output:
+[
+  "pine apple pen apple",
+  "pineapple pen apple",
+  "pine applepen apple"
+]
+Explanation: Note that you are allowed to reuse a dictionary word.
+```
+
+Example 3:
+
+```md
+s = "catsandog"
+wordDict = ["cats", "dog", "sand", "and", "cat"]
+Output:
+[]
+```
+
+这题目实际上是DFS，两个注意事项：
+
+1. 需要剪枝
+2. 需要cache否则会TLE
+
+```py
+class Solution(object):
+    def dfs(self, s, words, start, cache):
+        if start in cache:
+            return cache[start]
+        result = []
+        for end in range(start + 1, len(s) + 1):
+            word = s[start: end]
+            if word not in words:
+                continue
+            if end == len(s):
+                result.append(word)
+            else:
+                for sub_s in self.dfs(s, words, end, cache):
+                    result.append(word + ' ' + sub_s)
+        cache[start] = result
+        return result
+
+    def wordBreak(self, s, wordDict):
+        if not s:
+            return []
+        words = set(wordDict)
+        return self.dfs(s, words, 0, {})
+```
+
 ### 最大面积系列题
 
 #### 84. Largest Rectangle in Histogram
@@ -690,6 +766,86 @@ private int quickSolve(int[] prices) {
             profit += prices[i] - prices[i - 1];
     return profit;
 }
+```
+
+### 131 / 2. Palindrome Partitioning I / II
+
+```md
+Given a string s, partition s such that every substring of the partition is a palindrome.
+
+Return all possible palindrome partitioning of s.
+
+Example:
+
+Input: "aab"
+Output:
+[
+  ["aa","b"],
+  ["a","a","b"]
+]
+```
+
+简单DFS
+
+```py
+class Solution(object):
+    def partition(self, s):
+        res = []
+        self.helper(s, 0, [], res)
+        return res
+
+    def helper(self, s, idx, path, res):
+        if idx == len(s):
+            res.append(path)
+            return
+        for i in range(idx + 1, len(s) + 1):
+            temp = s[idx:i]
+            if temp == temp[::-1]:
+                self.helper(s, i, path + [temp], res)
+```
+
+```md
+Given a string s, partition s such that every substring of the partition is a palindrome.
+
+Return the minimum cuts needed for a palindrome partitioning of s.
+
+Example:
+
+Input: "aab"
+Output: 1
+Explanation: The palindrome partitioning ["aa","b"] could be produced using 1 cut.
+```
+
+1. 两个dp矩阵：isPal和dp
+    1. `isPal[i][j]`表示`s[j:i]`是否是回文
+    2. `dp[i]`表示在i位置处的最优切割
+2. 递推：
+    1. i从0到l，j从i到0
+    2. 判断`s[j:i]`是回文的标准：
+        1. `s[i] == s[j]`
+        2. `i - j < 2` 或者 `isPal[i - 1][j + 1]`
+    3. 既然`s[j:i]`是回文，那么`dp[i] = min(dp[i], dp[j - 1] + 1)`
+
+```py
+class Solution:
+    # @param {string} s
+    # @return {integer}
+    def minCut(self, s):
+        if s == s[::-1]: return 0
+        lens = len(s)
+        # edge case: only 1 cut
+        for i in range(1, lens):
+            if s[:i] == s[:i][::-1] and s[i:] == s[i:][::-1]:
+                return 1
+        #
+        isPal = [[False] * (i + 1) for i in range(lens)]
+        dp = range(lens) + [-1]
+        for i in range(lens):
+            for j in range(i, -1, -1):
+                if s[i] == s[j] and (i - j < 2 or isPal[i - 1][j + 1]):
+                    isPal[i][j] = True
+                    dp[i] = min(dp[i], dp[j - 1] + 1)
+        return dp[lens - 1]
 ```
 
 ## 3. 01背包问题

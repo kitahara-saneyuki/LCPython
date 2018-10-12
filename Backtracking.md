@@ -244,6 +244,34 @@ public void nextPermutation(int[] nums) {
 }
 ```
 
+### 60. Permutation Sequence
+
+基本是直接按题意去思考
+
+1. n个数字一共有`n!`种排列
+2. 所以第一个数字就是`k/((n-1)!)`，然后把`k%((n-1)!)`赋值给新的k
+3. 在待处理数字组中去掉已经用过的数字
+4. 如此往复直到n=0
+
+```py
+import math
+class Solution:
+    def getPermutation(self, n, k):
+        numbers = range(1, n+1)
+        permutation = ''
+        k -= 1
+        while n > 0:
+            n -= 1
+            # get the index of current digit
+            n_fac = math.factorial(n)
+            index = k // n_fac
+            k = k % n_fac
+            permutation += str(numbers[index])
+            # remove handled number
+            numbers.remove(numbers[index])
+        return permutation
+```
+
 ### 89. Gray Code
 
 The gray code is a binary numeral system where two successive values differ in only one bit. Given a nonnegative integer n representing the total number of bits in the code, print the sequence of gray code. A gray code sequence must begin with 0.

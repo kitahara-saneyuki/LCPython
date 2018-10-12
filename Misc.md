@@ -86,6 +86,24 @@ def majorityElement(self, nums):
 
 ## 4. 无法归类的各种怪题
 
+### 128. Longest Consecutive Sequence
+
+基本是直接按题意去思考，从没有前驱的数字x逐个开始检索y，最大的`y-x`即为所求
+
+```py
+class Solution:
+    def longestConsecutive(self, nums):
+        nums = set(nums)
+        best = 0
+        for x in nums:
+            if x - 1 not in nums:  # start
+                y = x + 1
+                while y in nums:   # end
+                    y += 1
+                best = max(best, y - x)
+        return best
+```
+
 ### 189. Rotate Array
 
 这个题不难，ABCD要旋转成CDAB的话，可以先翻转ABCD到DCBA，然后分别翻转两半为CDAB即可
