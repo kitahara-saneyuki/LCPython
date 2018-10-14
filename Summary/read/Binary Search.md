@@ -10,8 +10,8 @@ def binarySearch(nums, target):
             r = mid - 1
         elif nums[mid] < target:
             l = mid + 1
-	else: 
-	    return mid
+    else:
+        return mid
     return -1
 ```
 

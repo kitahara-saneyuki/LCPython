@@ -12,6 +12,12 @@
 1. Problem Solving：把新题解释成既有套路的过程
     1. 遇到没思路的新题先举栗子找规律
 2. Code Writing：熟练掌握既有套路
+    1. BFS -- 熟练度高
+    2. DFS / Backtracking
+    3. Binary Search
+    4. Linked List
+    5. Tree
+    6. Two Pointer
 
 ### 面试技巧
 

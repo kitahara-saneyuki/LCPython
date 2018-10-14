@@ -456,3 +456,120 @@ def sortList(self, head):
      use merge sort
     return self.mergeTwoLists(a, b)
 ```
+
+### 146. LRU Cache
+
+Design and implement a data structure for Least Recently Used (LRU) cache. It should support the following operations: get and put.
+
+get(key) - Get the value (will always be positive) of the key if the key exists in the cache, otherwise return -1.
+put(key, value) - Set or insert the value if the key is not already present. When the cache reached its capacity, it should invalidate the least recently used item before inserting a new item.
+
+利用链表增删改全为`O(1)`，dict查询为`O(1)`的性质
+
+1. dict里由key指向node
+2. 每次调用（get）某个节点都查询并删除该节点，并在末尾添加该节点
+3. 每次插入（put）节点都比较当前dict的size和capacity，如果超出了capacity就把最前排的节点删除，使得cache不超出容量
+
+```py
+class Node:
+    def __init__(self, k, v):
+        self.key = k
+        self.val = v
+        self.prev = None
+        self.next = None
+
+class LRUCache:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.dic = dict()
+        self.head = Node(0, 0)
+        self.tail = Node(0, 0)
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def get(self, key):
+        if key in self.dic:
+            n = self.dic[key]
+            self._remove(n)
+            self._add(n)
+            return n.val
+        return -1
+
+    def put(self, key, value):
+        if key in self.dic:
+            self._remove(self.dic[key])
+        n = Node(key, value)
+        self._add(n)
+        self.dic[key] = n
+        if len(self.dic) > self.capacity:
+            n = self.head.next
+            self._remove(n)
+            del self.dic[n.key]
+
+    def _remove(self, node):
+        p = node.prev
+        n = node.next
+        p.next = n
+        n.prev = p
+
+    def _add(self, node):
+        p = self.tail.prev
+        p.next = node
+        self.tail.prev = node
+        node.prev = p
+        node.next = self.tail
+```
+
+### 460. LFU Cache
+
+Design and implement a data structure for Least Frequently Used (LFU) cache. It should support the following operations: get and put.
+
+get(key) - Get the value (will always be positive) of the key if the key exists in the cache, otherwise return -1.
+put(key, value) - Set or insert the value if the key is not already present. When the cache reaches its capacity, it should invalidate the least frequently used item before inserting a new item. For the purpose of this problem, when there is a tie (i.e., two or more keys that have the same frequency), the least recently used key would be evicted.
+
+Follow up:
+Could you do both operations in O(1) time complexity?
+
+实际没必要用链表那么麻烦，python嘛，用dict就好咯
+
+1. put的时候如果key已经在cache里，要再调用一次get
+2. 用一个变量minfreq记录当前的least freq
+
+```py
+from collections import defaultdict
+class LFUCache(object):
+    def __init__(self, capacity):
+        self.cap = capacity
+        self.ht = {} ## key: key, val: [value, freq]
+        self.freq = defaultdict(list)
+        self.minfreq = 1
+
+    def get(self, key):
+        if key not in self.ht:
+            return -1
+        val = self.ht[key][0]
+        self.ht[key][1] += 1
+        newfreq = self.ht[key][1]
+        self.freq[newfreq].append(key)
+        self.freq[newfreq - 1].remove(key)
+        # corner case
+        if len(self.freq[self.minfreq]) == 0:
+            self.minfreq += 1
+        return val
+
+    def put(self, key, value):
+        if key in self.ht:
+            self.ht[key][0] = value
+            self.get(key)
+            return
+        # corner case
+        if self.cap == 0:
+            return
+        if len(self.ht) == self.cap:
+            rmkey = self.freq[self.minfreq].pop(0)
+            self.ht.pop(rmkey)
+        self.minfreq = 1
+        self.ht[key] = [value, 1]
+        self.freq[self.minfreq].append(key)
+        return
+```

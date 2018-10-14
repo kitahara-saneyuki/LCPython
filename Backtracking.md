@@ -144,9 +144,17 @@ private boolean search(char[][]board, String word, int i, int j, int index){
 }
 ```
 
-### 扯淡迷宫问题
+### 864. Shortest Path to Get All Keys
 
-Suppose you have a 2-D grid. Each point is either land or water. There is also a start point and a goal. There are now keys that open up doors. Each key corresponds to one door. Implement a function that returns the shortest path from the start to the goal using land tiles, keys and open doors. Implement a function that returns the shortest path from the start to the goal using land tiles, keys and open doors.
+```md
+We are given a 2-dimensional grid. "." is an empty cell, "#" is a wall, "@" is the starting point, ("a", "b", ...) are keys, and ("A", "B", ...) are locks.
+
+We start at the starting point, and one move consists of walking one space in one of the 4 cardinal directions.  We cannot walk outside the grid, or walk into a wall.  If we walk over a key, we pick it up.  We can't walk over a lock unless we have the corresponding key.
+
+For some 1 <= K <= 6, there is exactly one lowercase and one uppercase letter of the first K letters of the English alphabet in the grid.  This means that there is exactly one key for each lock, and one lock for each key; and also that the letters used to represent the keys and locks were chosen in the same order as the English alphabet.
+
+Return the lowest number of moves to acquire all keys.  If it's impossible, return -1.
+```
 
 本身走迷宫问题基本都是简单的回溯搜索，但这个题目他存在一个钥匙和大门，我们按照正常人的逻辑，列出来几个逻辑：
 
@@ -154,56 +162,39 @@ Suppose you have a 2-D grid. Each point is either land or water. There is also a
 2. 而且在没有拿到钥匙之前，最好是不要走回头路，否则的话那完全可以在这个地方无限打转转
 3. 拿到钥匙之后，允许走回头路，所以visited数组清零
 
-不要被这个题目吓着，这题没有非常难
+不要被这个题目吓着，这题没有非常难，当然具体实现还是可以有很多奇技淫巧的
+
+1. state用位数组来表示捡到了哪些钥匙
+2. 用queue不是寻求最短路径的精神，heapq更适合搜索最短路径
+3. 好马不吃回头草哦，所以用一个`memo(newState, x, y)`储存已经检索过的状态
 
 ```py
-def solve(self, maze):
-    ret, path, keyring, visited = [], [], {}, self.initVisited(maze)
-    for i in range(0, len(maze)):
-        for j in range(0, len(maze[i])):
-            if maze[i][j] == '2':
-                self.walk(maze, i, j, keyring, path, ret, visited)
-    return ret
-
-def initVisited(self, maze):
-    ret = []
-    for i in maze:
-        temp = []
-        for j in i:
-            temp.append(False)
-        ret.append(temp)
-    return ret
-
-def walk(self, maze, y, x, keyring, path, ret, visited):
-    if y < 0 or y >= len(maze) or x < 0 or x >= len(maze[0]):
-        return                       out of board
-    pt = maze[y][x]
-    if visited[y][x] or pt == '0':
-        return                       visited
-    if pt == '3':
-        path.append([y, x])
-        ret = list(path)
-        print(ret)
-        return                       found dest
-    if len(path) > len(ret) > 0:
-        return                       longer path than old
-
-    if pt.isalpha():
-        if pt.isupper() and pt.lower() not in keyring:
-            return                   key missing
-        elif pt.islower():
-            if pt not in keyring:
-                keyring[pt] = 1      add key to keyring
-                visited = self.initVisited(maze)
-
-    visited[y][x] = True
-    path.append([y, x])
-    self.walk(maze, y, x + 1, keyring, path, ret, visited)
-    self.walk(maze, y + 1, x, keyring, path, ret, visited)
-    self.walk(maze, y, x - 1, keyring, path, ret, visited)
-    self.walk(maze, y - 1, x, keyring, path, ret, visited)
-    visited[y][x] = False
-    path.pop()
+class Solution(object):
+    def shortestPathAllKeys(self, grid):
+        final, m, n, si, sj = 0, len(grid), len(grid[0]), 0, 0
+        for i in range(m):
+            for j in range(n):
+                if grid[i][j] in "abcdef":
+                    # 位数组
+                    final |= 1 << ord(grid[i][j]) - ord("a")
+                elif grid[i][j] == "@":
+                    si, sj = i, j
+        q, memo = [(0, si, sj, 0)], set()
+        while q:
+            moves, i, j, state = heapq.heappop(q)
+            if state == final:
+                return moves
+            for x, y in ((i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)):
+                if 0 <= x < m and 0 <= y < n and grid[x][y] != "#":
+                    if grid[x][y].isupper() and not state & 1 << (ord(grid[x][y].lower()) - ord("a")):
+                        # 撞到没开的门了，视同于墙
+                        continue
+                    # 捡到钥匙
+                    newState = ord(grid[x][y]) >= ord("a") and state | 1 << (ord(grid[x][y]) - ord("a")) or state
+                    if (newState, x, y) not in memo:
+                        memo.add((newState, x, y))
+                        heapq.heappush(q, (moves + 1, x, y, newState))
+        return -1
 ```
 
 ## 2. Combinatorics
@@ -306,7 +297,7 @@ BFS思考起来比DFS要简单很多，而且对于很多问题是秒杀……�
 ```py
 def canFinish(self, numCourses, prerequisites):
     que, hashmap, deg, tot = [], {}, [0] * numCourses, 0
-     Prepare a list pre-req edges
+    # Prepare a list pre-req edges
     for i in prerequisites:
         if i[0] not in hashmap:
             hashmap[i[0]] = [i[1]]
@@ -319,13 +310,13 @@ def canFinish(self, numCourses, prerequisites):
             que.append(i)
             tot += 1
     ret = []
-     BFS to Topo-sort
+    # BFS to Topo-sort
     while len(que) > 0:
         cur, que = que[0], que[1:]
         ret.append(cur)
         if cur in hashmap:
             for i in hashmap[cur]:
-                 only classes w/o following classes can be traversed
+                # only classes w/o following classes can be traversed
                 deg[i] -= 1
                 if deg[i] == 0:
                     que.append(i)
@@ -411,6 +402,41 @@ public void buildGraph(String[] words, boolean[][] adj, int[] visited) {
 }
 ```
 
+### 310. Minimum Height Trees
+
+这题的题眼是把原题变形成拓扑排序，确切说就是从1度的叶子开始往下剥，一直剥到“芯”
+
+1. 初始化：对每个节点赋值度数
+2. 从度数为1的叶子往里剥
+3. 每剥一层把内层度数-1，然后这一层的所有叶子成为新的queue
+4. 最内层即为所求
+
+```py
+class Solution(object):
+    def findMinHeightTrees(self, n, edges):
+        if n <= 1:
+            return [0]
+        degrees = [0] * n
+        graph = {x:[] for x in xrange(n)}
+        for p in edges:
+            degrees[p[1]] += 1
+            degrees[p[0]] += 1
+            graph[p[1]].append(p[0])
+            graph[p[0]].append(p[1])
+        queue = [x for x in xrange(0, n) if degrees[x] == 1]
+        ret = []
+        while queue:
+            temp = []
+            ret = queue[:]
+            for x in queue:
+                for n in graph[x]:
+                    degrees[n] -= 1
+                    if degrees[n] == 1:
+                        temp.append(n)
+            queue = temp
+        return ret
+```
+
 ### 126 & 127. Word Ladder I / II
 
 Given two words (beginWord and endWord), and a dictionary's word list, find all shortest transformation sequence(s) from beginWord to endWord, such that:
@@ -472,4 +498,105 @@ def findLadders(self, beginWord, endWord, wordList):
     while res and res[0][0] != beginWord:
         res = [r.append(p) for r in res for p in parents[r[0]]]
     return res
+```
+
+### 785. Is Graph Bipartite
+
+传统拓扑排序题，思考BFS并不难，但要注意边界条件：
+
+1. 用+-1标色，不需要01标色
+2. 上一轮已经标色过的点不需要再理会
+3. 每一轮遍历遇到两个相邻点颜色一样就return False
+
+```py
+class Solution(object):
+    def isBipartite(self, graph):
+        n, colored = len(graph), {}
+        for i in range(n):
+            if i not in colored and graph[i]:
+                colored[i] = 1
+                q = collections.deque([i])
+                while q:
+                    cur = q.popleft()
+                    for nb in graph[cur]:
+                        if nb not in colored:
+                            colored[nb] = -colored[cur]
+                            q.append(nb)
+                        elif colored[nb] == colored[cur]:
+                            return False
+        return True
+```
+
+### 787. Cheapest Flights Within K Stops
+
+实际是实现一个Dijkstra算法
+
+1. Python奇技淫巧：defaultdict实现dict[dict[]]
+2. 用优先队列实现，优先级为迄今为止的travel cost
+
+```py
+class Solution(object):
+    def findCheapestPrice(self, n, flights, src, dst, k):
+        f = collections.defaultdict(dict)
+        for a, b, cost in flights:
+            f[a][b] = cost
+        heap = [(0, src, k + 1)]
+        while heap:
+            cost, cur, k = heapq.heappop(heap)
+            if cur == dst:
+                return cost
+            if k > 0:
+                for dest in f[cur]:
+                    heapq.heappush(heap, (cost + f[cur][dest], dest, k - 1))
+        return -1
+```
+
+### 417. Pacific Atlantic Water Flow
+
+```md
+Given an m x n matrix of non-negative integers representing the height of each unit cell in a continent, the "Pacific ocean" touches the left and top edges of the matrix and the "Atlantic ocean" touches the right and bottom edges.
+
+Water can only flow in four directions (up, down, left, or right) from a cell to another one with height equal or lower.
+
+Find the list of grid coordinates where water can flow to both the Pacific and Atlantic ocean.
+
+Note:
+The order of returned grid coordinates does not matter.
+Both m and n are less than 150.
+Example:
+
+Given the following 5x5 matrix:
+
+  Pacific ~   ~   ~   ~   ~ 
+       ~  1   2   2   3  (5) *
+       ~  3   2   3  (4) (4) *
+       ~  2   4  (5)  3   1  *
+       ~ (6) (7)  1   4   5  *
+       ~ (5)  1   1   2   4  *
+          *   *   *   *   * Atlantic
+```
+
+这题目的题眼是太平洋和大西洋不是两个角，而是分别指代两条边，由每个节点BFS必然超时，所以从“每个节点向外递减”逆向思考为“从大洋向内递增”
+
+1. 从太平洋和大西洋分别向里BFS找到（太平洋是向右向下，大西洋是向左向上）不可再增加的边
+2. 对两个集合求交集即可
+
+```py
+class Solution(object):
+    def pacificAtlantic(self, matrix):
+        if not matrix: return []
+        m, n = len(matrix), len(matrix[0])
+        def bfs(reachable_ocean):
+            q = collections.deque(reachable_ocean)
+            while q:
+                (i, j) = q.popleft()
+                for (di, dj) in [(0,1), (0, -1), (1, 0), (-1, 0)]:
+                    if 0 <= di+i < m and 0 <= dj+j < n and (di+i, dj+j) not in reachable_ocean \
+                            and matrix[di+i][dj+j] >= matrix[i][j]:
+                        q.append( (di+i,dj+j) )
+                        reachable_ocean.add( (di+i, dj+j) )
+            return reachable_ocean
+        pacific  = set ( [ (i, 0) for i in range(m)]   + [(0, j) for j  in range(1, n)]) 
+        atlantic = set ( [ (i, n-1) for i in range(m)] + [(m-1, j) for j in range(n-1)]) 
+        return list( bfs(pacific) & bfs(atlantic) )
 ```

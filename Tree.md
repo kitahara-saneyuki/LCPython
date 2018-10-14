@@ -573,9 +573,93 @@ def isSubtree(self, s, t):
         else:
             if root:
                 return helper(s.left, t, True) or helper(s.right, t, True)
-            else:
+            else:  # 如果已经在搜索子树了，那么任何一个节点不相等都返回False
                 return False
     return helper(s, t, True)
+```
+
+### 114. Flatten Binary Tree to Linked List
+
+这题有许多种方式，最直截了当的方法：
+
+1. 递归flatten左子树
+2. 把已经flatten过的左子树放在右子树位置上
+3. 然后把原来的右子树插到现在右子树的尾巴
+4. 递归flatten右子树
+
+```py
+class Solution:
+    def flatten(self, node):
+        if not node:
+            return node
+        if node.left:
+            tmp = node.right
+            node.right = node.left
+            self.flatten(node.left)
+            node.left = None
+            while node.right:
+                node = node.right
+            node.right = tmp
+            self.flatten(node.right)
+        else:
+            self.flatten(node.right)
+```
+
+### 894. All Possible Full Binary Trees
+
+几个注意事项：
+
+1. 满二叉树FBT的规模不可能是偶数
+2. 递归+memo
+3. 递归的时候只要定好左右子树的规模x和y即可，返回递归左右子树即可
+
+```py
+class Solution(object):
+    cache = {0: [], 1: [TreeNode(0)]}
+
+    def allPossibleFBT(self, n):
+        if n % 2 == 0 or n < 1:
+            return []
+
+        if n not in self.cache:
+            answer = []
+            for x in range(n):
+                y = n - 1 - x
+                for left in self.allPossibleFBT(x):
+                    for right in self.allPossibleFBT(y):
+                        root = TreeNode(0)
+                        root.left = left
+                        root.right = right
+                        answer.append(root)
+            Solution.cache[n] = answer
+        return self.cache[n]
+```
+
+### 222. Count Complete Tree Nodes
+
+完整二叉树的定义是除了最下一层之外都填满的二叉树，那么就只有两种可能
+
+1. 右子树不满：那么左子树是满的，左子树深度m，左子树总个数2^m-1，加上root
+2. 左子树不满：那么右子树是满的，右子树深度n，右子树总个数2^n-1，加上root
+
+所以实际实现一个depth函数即可，每次递归统计不满的那一侧即可
+
+```py
+class Solution:
+    def countNodes(self, root):
+        if not root:
+            return 0
+        leftDepth = self.getDepth(root.left)
+        rightDepth = self.getDepth(root.right)
+        if leftDepth == rightDepth:
+            return pow(2, leftDepth) + self.countNodes(root.right)
+        else:
+            return pow(2, rightDepth) + self.countNodes(root.left)
+
+    def getDepth(self, root):
+        if not root:
+            return 0
+        return 1 + self.getDepth(root.left)
 ```
 
 ## DFS
@@ -680,6 +764,91 @@ class Trie:
                 return False
             node=node.children[i]
         return True
+```
+
+### 211. Add and Search Word - Data structure design
+
+虽然非trie写法能够pass，但是很明显是因为测试数据不可爱的原因
+
+1. 用defaultdict实现TrieNode
+2. dfs搜索trie搜到isWord即可
+3. 通配符可以用跳过某个节点解决
+
+```py
+class TrieNode():
+    def __init__(self):
+        self.children = collections.defaultdict(TrieNode)
+        self.isWord = False
+
+class WordDictionary(object):
+    def __init__(self):
+        self.root = TrieNode()
+
+    def addWord(self, word):
+        node = self.root
+        for w in word:
+            node = node.children[w]
+        node.isWord = True
+
+    def search(self, word):
+        node = self.root
+        self.res = False
+        self.dfs(node, word)
+        return self.res
+
+    def dfs(self, node, word):
+        if not word:
+            if node.isWord:
+                self.res = True
+            return
+        if word[0] == ".":
+            for n in node.children.values():
+                self.dfs(n, word[1:])
+        else:
+            node = node.children.get(word[0])
+            if not node:
+                return
+            self.dfs(node, word[1:])
+```
+
+### 212. Word Search II
+
+Trie+DFS，原理上不复杂，就是太他妈长
+
+```py
+class Solution:
+    # @param {character[][]} board
+    # @param {string[]} words
+    # @return {string[]}
+    def findWords(self, board, words):
+    #make trie
+        trie={}
+        for w in words:
+            t=trie
+            for c in w:
+                if c not in t:
+                    t[c]={}
+                t=t[c]
+            t['#']='#'  # ending symbol
+        self.res=set()
+        self.used=[[False]*len(board[0]) for _ in range(len(board))]
+        for i in range(len(board)):
+            for j in range(len(board[0])):
+                self.find(board,i,j,trie,'')
+        return list(self.res)
+
+    def find(self,board,i,j,trie,pre):
+        if '#' in trie:
+            self.res.add(pre)
+        if i<0 or i>=len(board) or j<0 or j>=len(board[0]):
+            return
+        if not self.used[i][j] and board[i][j] in trie:
+            self.used[i][j]=True
+            self.find(board, i+1,j,trie[board[i][j]],pre+board[i][j])
+            self.find(board, i,j+1,trie[board[i][j]],pre+board[i][j])
+            self.find(board, i-1,j,trie[board[i][j]],pre+board[i][j])
+            self.find(board, i,j-1,trie[board[i][j]],pre+board[i][j])
+            self.used[i][j]=False
 ```
 
 ## Binary Search Tree

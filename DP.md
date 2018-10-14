@@ -33,6 +33,28 @@ def maxProduct(self, nums):
     return maxsofar
 ```
 
+### 279. Perfect Squares
+
+1. `dp[i]`代表i最少由多少个平方数组成
+2. 初始化：全都`int_max`
+3. 递推：对于每个i，`dp[i] = min(dp[i - j * j] + 1) for j * j < i`
+
+```py
+class Solution(object):
+    def numSquares(self, n):
+        int_max = 2 ** 31
+        dp = [int_max for i in range(n + 1)]
+        dp[0] = 0
+        for i in range(1, n + 1):
+            cur_min = int_max
+            j = 1
+            while i >= j * j:
+                cur_min = min(cur_min, dp[i - j * j] + 1)
+                j += 1
+            dp[i] = cur_min
+        return dp[n]
+```
+
 ### 139. Word Break I
 
 Given a non-empty string s and a dictionary wordDict containing a list of non-empty words, determine if s can be segmented into a space-separated sequence of one or more dictionary words.
@@ -373,6 +395,25 @@ def lengthOfLIS(self, nums):
 
 ### 494. Target Sum
 
+```md
+You are given a list of non-negative integers, a1, a2, ..., an, and a target, S. Now you have 2 symbols + and -. For each integer, you should choose one from + and - as its new symbol.
+
+Find out how many ways to assign symbols to make sum of integers equal to target S.
+
+Example 1:
+Input: nums is [1, 1, 1, 1, 1], S is 3.
+Output: 5
+Explanation:
+
+-1+1+1+1+1 = 3
++1-1+1+1+1 = 3
++1+1-1+1+1 = 3
++1+1+1-1+1 = 3
++1+1+1+1-1 = 3
+
+There are 5 ways to assign symbols to make the sum of nums be target 3.
+```
+
 这题目看图就懂了……
 ![alt text](https://leetcode.com/uploads/files/1485048726667-screen-shot-2017-01-21-at-8.31.48-pm.jpg "DP 1")
 
@@ -448,6 +489,40 @@ def minPathSum(self, grid):
             elif i != 0 and j != 0:
                 grid[i][j] += min(grid[i][j-1], grid[i-1][j])
     return grid[len(grid) - 1][len(grid[0]) - 1]
+```
+
+### 542. 01 Matrix
+
+Given a matrix consists of 0 and 1, find the distance of the nearest 0 for each cell.
+
+The distance between two adjacent cells is 1.
+
+这题就普通二维DP，唯一的扣在于需要扫两轮，只扫描一轮是不可行的，两轮分别从左上到右下，再从右下到左上
+
+```py
+class Solution:
+    def updateMatrix(self, matrix):
+        if not matrix or not matrix[0]:
+            return matrix
+        h, w = len(matrix), len(matrix[0])
+        mask = [[10000] * w for i in range (h)]
+        for i in range(h):
+            for j in range(w):
+                if matrix[i][j] != 0:
+                    if i > 0:
+                        mask[i][j] = min(mask[i][j], mask[i - 1][j] + 1)
+                    if j > 0:
+                        mask[i][j] = min(mask[i][j], mask[i][j - 1] + 1)
+                else:
+                    mask[i][j] = 0
+        for i in range (h-1, -1, -1):
+            for j in range (w-1, -1, -1):
+                if matrix[i][j] != 0:
+                    if i < h - 1:
+                        mask[i][j] = min(mask[i][j],mask[i + 1][j] + 1)
+                    if j < w - 1:
+                        mask[i][j] = min(mask[i][j],mask[i][j + 1] + 1)
+        return mask
 ```
 
 ### 编辑距离系列题
